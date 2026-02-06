@@ -1,0 +1,114 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("customer")
+  phone        String?
+  address      String?
+  createdAt    DateTime @default(now())
+  orders       Order[]
+  reservations Reservation[]
+  reviews      Review[]
+}
+
+model Category {
+  id        String    @id @default(uuid())
+  name      String
+  slug      String    @unique
+  createdAt DateTime  @default(now())
+  products  Product[]
+}
+
+model Product {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String
+  price       Float
+  categoryId  String
+  imageUrl    String?
+  available   Boolean   @default(true)
+  tags        String[]  @default([])
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  category    Category  @relation(fields: [categoryId], references: [id])
+  reviews     Review[]
+
+  @@index([categoryId])
+  @@index([slug])
+  @@index([createdAt])
+}
+
+model Review {
+  id        String   @id @default(uuid())
+  userId    String
+  productId String
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@index([productId])
+  @@index([userId])
+}
+
+model Order {
+  id               String   @id @default(uuid())
+  userId           String?
+  items            Json
+  subtotal         Float
+  tax              Float
+  total            Float
+  status           String
+  paymentMethod    String
+  paymentStatus    String
+  pickupOrDelivery String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  user             User?    @relation(fields: [userId], references: [id])
+
+  @@index([status])
+  @@index([createdAt])
+  @@index([userId])
+}
+
+model Reservation {
+  id        String   @id @default(uuid())
+  userId    String?
+  date      DateTime
+  time      String
+  partySize Int
+  status    String
+  notes     String?
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([date])
+  @@index([status])
+}
+
+model Upload {
+  id          String   @id @default(uuid())
+  url         String
+  filename    String
+  contentType String
+  createdAt   DateTime @default(now())
+}
+
+model RevokedToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  revokedAt DateTime @default(now())
+  expiresAt DateTime
+}
